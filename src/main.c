@@ -27,7 +27,6 @@ typedef struct{
 	int tun_file_descriptor;
 }S_Main_Params;
 
-//struct bladerf *p_bladerf_device = NULL;
 
 void receive_thread(void* vargp);
 void transmit_thread(void* vargp);
@@ -109,17 +108,6 @@ int main(int argc, char *argv[])
     //pthread_create(&receive_thread_id, NULL, (void *)&receive_thread, (void *)(&params) );
     pthread_create(&transmit_thread_id, NULL, (void *)&transmit_thread, (void *)(&params));
    
-
-
-//TODO: sleep yerine main'in return etmeyeceği bir kod koyulmalı. while(1) olabilir
-    while(1){
-    	static int wc = 0;
-    	sleep(60);
-    	wc++;
-    	printf("waiting count : %d minutes", &wc);
-
-    }
-
    // execv(remove_tun_interface_prog_path, arg);
 	
     return 0;
