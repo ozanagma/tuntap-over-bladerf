@@ -94,7 +94,7 @@ int OfdmFlexFrameTransmit(unsigned char tx_header[8],  unsigned char* tx_payload
 
 	ofdmframe_init_sctype_range(ofdm_params.num_of_sc, -0.25, 0.25, subcarrier_allocation);
 
-    // create frame generator with default properties
+
     ofdmflexframegen fg = ofdmflexframegen_create(ofdm_params.num_of_sc, ofdm_params.cp_len, ofdm_params.taper_len, subcarrier_allocation, &fgprops);
 
 

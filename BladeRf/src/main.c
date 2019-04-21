@@ -132,7 +132,6 @@ void receive_thread(void* vargp)
 {
 	S_Main_Params* p_params = (S_Main_Params*)vargp;
 
-	//FlexFrameReceive(mycallback, p_params->p_bladerf_device);
 	OfdmFlexFrameReceive(mycallback, p_params->p_bladerf_device, vargp);
 
 }
@@ -160,7 +159,6 @@ void transmit_thread(void* vargp)
 		sprintf((char*)payload,"Packet (%d)",cnt);
 		memset(&payload[13], 0x00, PAYLOAD_LENGTH-13);
 
-		//ret = FlexFrameTransmit(header, payload, PAYLOAD_LENGTH, p_params->p_bladerf_device);
 		ret = OfdmFlexFrameTransmit(header, payload, PAYLOAD_LENGTH, p_params->p_bladerf_device);
 
 	}

@@ -13,25 +13,14 @@ add_executable(bladeRF_rt 	${PROJECT_SOURCE_DIR}/src/main.c
 	${PROJECT_SOURCE_DIR}/src/tun_tap.c
 	${PROJECT_SOURCE_DIR}/src/blade_rf.c
 	${PROJECT_SOURCE_DIR}/src/utils.c
-	${PROJECT_SOURCE_DIR}/src/flexframe.c
 	${PROJECT_SOURCE_DIR}/src/ofdmflexframe.c
 	
 	
 )
 
-add_executable(tuntap_test 	${PROJECT_SOURCE_DIR}/src/tuntap_unit_test.c
-	${PROJECT_SOURCE_DIR}/src/tun_tap.c
-)
-
-add_executable(ofdm_example ${PROJECT_SOURCE_DIR}/examples/ofdm_example.c)
-
-
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
 
 target_link_libraries(bladeRF_rt bladeRF m c liquid pthread) #fec tuntap
 
-target_link_libraries(tuntap_test m c pthread) #fec tuntap
-
-target_link_libraries(ofdm_example m c liquid) #fec tuntap
 
 
