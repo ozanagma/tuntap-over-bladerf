@@ -1,8 +1,6 @@
 
 #include "../includes/tun_tap.h"
 #include "../includes/blade_rf.h"
-#include "../includes/utils.h"
-#include "../includes/flexframe.h"
 #include "../includes/ofdmflexframe.h"
 
 #include <math.h>
