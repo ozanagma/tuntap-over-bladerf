@@ -2,7 +2,7 @@
 
  echo "Tun interface is removing.." 
  #sudo ip address add 192.1.1.2/24 dev tuntap_interface
- sudo ip link set tuntap0 down
+ sudo ip link set tundevice0 down
  sudo ip tuntap del name tuntap0 mode tun
 
 
