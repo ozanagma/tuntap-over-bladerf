@@ -1,0 +1,12 @@
+#!/bin/bash
+
+ echo "Tun interface is removing.." 
+
+ sudo ip link set tundevice0 down
+ sudo ip tuntap del name tundevice0 mode tun
+
+
+
+
+
+
