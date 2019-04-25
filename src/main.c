@@ -45,11 +45,6 @@ static int mycallback(unsigned char *  _header,
 
 int main(int argc, char *argv[])
 {
-
-    char* create_tun_interface_prog_path = "../../bash_scripts/create_tun_interface";
-    char* remove_tun_interface_prog_path = "../../bash_scripts/remove_tun_interface";
-    char tun_interface_name[IFNAMSIZ] = "tun_client";
-
     S_Main_Params params;
     memset(&params, 0, sizeof(S_Main_Params));
 
@@ -68,32 +63,30 @@ int main(int argc, char *argv[])
 
     pthread_t receive_thread_id;
     pthread_t transmit_thread_id;
-    
-    //fork_child_process(remove_tun_interface_prog_path);
 
-    //fork_child_process(create_tun_interface_prog_path);
+
+    config_rx.module     = BLADERF_MODULE_RX;
+    config_rx.frequency = (unsigned int)atoi(argv[1]);
+    config_rx.bandwidth = (unsigned int)atoi(argv[2]);
+    config_rx.samplerate = (unsigned int)atoi(argv[3]);
+    config_rx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[4];
+    config_rx.vga1 = atoi(argv[5]);
+    config_rx.vga2 = atoi(argv[6]);
+
+    config_tx.module     = BLADERF_MODULE_TX;
+    config_tx.frequency = (unsigned int)atoi(argv[7]);
+    config_tx.bandwidth = (unsigned int)atoi(argv[8]);
+    config_tx.samplerate = (unsigned int)atoi(argv[9]);
+    config_tx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[10];
+    config_tx.vga1 = atoi(argv[11]);
+    config_tx.vga2 = atoi(argv[12]);
+        
 
     total_device_number = BladeRFGetDeviceSerials(&p_dev_info);
 
-  
     BladeRFOpenWithSerial(&(params.p_bladerf_device), (p_dev_info)->serial);
+
     BladeRFLoadFPGA(params.p_bladerf_device,  "../../bladerf_fpga/hostedx115.rbf");
-
-
-   
-    config_rx.module     = BLADERF_MODULE_RX;
-    config_tx.module     = BLADERF_MODULE_TX;
-    config_tx.frequency  = config_rx.frequency  = FREQUENCY_USED;
-    config_tx.bandwidth  = config_rx.bandwidth  = BANDWIDTH_USED;
-    config_tx.samplerate = config_rx.samplerate = SAMPLING_RATE_USED;
-    config_tx.rx_lna     = config_rx.rx_lna     = BLADERF_LNA_GAIN_MAX;
-
-    config_rx.vga1 = 30;
-    config_rx.vga2 = 15;
-
-    config_tx.vga1 = -4;
-    config_tx.vga2 = 25;
-
 
     status = BladeRFConfigureChannel(params.p_bladerf_device, &config_rx);
     status = BladeRFConfigureChannel(params.p_bladerf_device, &config_tx);
@@ -106,9 +99,8 @@ int main(int argc, char *argv[])
 
     OfdmFlexFrameInit();
     //pthread_create(&receive_thread_id, NULL, (void *)&receive_thread, (void *)(&params) );
-    pthread_create(&transmit_thread_id, NULL, (void *)&transmit_thread, (void *)(&params));
+    //pthread_create(&transmit_thread_id, NULL, (void *)&transmit_thread, (void *)(&params));
    
-   // execv(remove_tun_interface_prog_path, arg);
 	
     return 0;
 }

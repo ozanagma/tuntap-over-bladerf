@@ -12,7 +12,6 @@ link_directories(/opt/local/lib)
 add_executable(bladeRF_rt 	${PROJECT_SOURCE_DIR}/src/main.c
 	${PROJECT_SOURCE_DIR}/src/tun_tap.c
 	${PROJECT_SOURCE_DIR}/src/blade_rf.c
-	${PROJECT_SOURCE_DIR}/src/utils.c
 	${PROJECT_SOURCE_DIR}/src/ofdmflexframe.c	
 )
 
