@@ -28,8 +28,8 @@ typedef struct{
 }S_Main_Params;
 
 
-void receive_thread(void* vargp);
-void transmit_thread(void* vargp);
+void* receive_thread(void* vargp);
+void* transmit_thread(void* vargp);
 int fork_child_process(char* path_to_exe);
 
 static int mycallback(unsigned char *  _header,
@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
 	}
 */
 
-    int status;
-    int total_device_number;
+    int status = 0;
+    int total_device_number = 0;
     struct module_config config_rx;
     struct module_config config_tx;
     struct bladerf_devinfo* p_dev_info;
@@ -98,15 +98,15 @@ int main(int argc, char *argv[])
 
 
     OfdmFlexFrameInit();
-    //pthread_create(&receive_thread_id, NULL, (void *)&receive_thread, (void *)(&params) );
-    //pthread_create(&transmit_thread_id, NULL, (void *)&transmit_thread, (void *)(&params));
+    pthread_create(&receive_thread_id, NULL, receive_thread, (void *)(&params) );
+    pthread_create(&transmit_thread_id, NULL, transmit_thread, (void *)(&params));
    
 	
     return 0;
 }
 
 
-void receive_thread(void* vargp)
+void* receive_thread(void* vargp)
 {
 	S_Main_Params* p_params = (S_Main_Params*)vargp;
 
@@ -115,7 +115,7 @@ void receive_thread(void* vargp)
 }
 
 
-void transmit_thread(void* vargp)
+void* transmit_thread(void* vargp)
 {
 
 	S_Main_Params* p_params = (S_Main_Params*)vargp;
@@ -150,17 +150,9 @@ static int mycallback(unsigned char *  _header,
                       framesyncstats_s _stats,
                       void *           _userdata)
 {
- /*  printf("***** callback invoked!\n");
-    printf("  header (%s)\n",  _header_valid  ? "valid" : "INVALID");
-    printf("  payload (%s)\n", _payload_valid ? "valid" : "INVALID");
-    printf("  payload length (%d)\n", _payload_len);*/
-//
-//    // type-cast, de-reference, and increment frame counter
-  // unsigned int * counter = (unsigned int *) _userdata;
-   // (*counter)++;
+
 	static int counter = 0;
 
-  // framesyncstats_print(&_stats);
 
 
 	if ( _header_valid  )
