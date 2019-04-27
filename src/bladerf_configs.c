@@ -1,4 +1,4 @@
-#include "../includes/blade_rf.h"
+#include "../includes/bladerf_configs.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -12,15 +12,14 @@ int process_samples_ofdm_flex_frame(int16_t * samples, unsigned int sample_lengt
 
 
 /*Global Functions*/
-int BladeRFGetDeviceSerials(struct bladerf_devinfo** _devices)
+int bladerf_configs_get_device_serials(struct bladerf_devinfo** _devices)
 {
 	int total_device_number = bladerf_get_device_list(_devices);
-
 
     return total_device_number;
 }
 
-void BladeRFOpenWithSerial(struct bladerf **dev, char *serial)
+void bladerf_configs_open_device_with_serial(struct bladerf **dev, char *serial)
 {
     int status;
     struct bladerf_devinfo info;
@@ -32,28 +31,28 @@ void BladeRFOpenWithSerial(struct bladerf **dev, char *serial)
     status = bladerf_open_with_devinfo(dev, &info);
     if (status == BLADERF_ERR_NODEV) {
         printf("No devices available with serial=%s\n", serial);
-        
-    } else if (status != 0) {
-        fprintf(stderr, "Failed to open device with serial=%s (%s)\n", serial,
-                bladerf_strerror(status));
-        
-    } else {
-     
+        return;   
     }
+
+    fprintf(stderr, "Failed to open device with serial=%s (%s)\n", serial, bladerf_strerror(status)); 
+    return; 
+
 }
 
-int BladeRFLoadFPGA(struct bladerf *dev, const char *fpga)
+int bladerf_configs_load_fpga(struct bladerf *dev, const char *fpga)
 {
     int status = bladerf_load_fpga(dev,  fpga);
+
     if (status != 0) {
         fprintf(stderr, "Unable to bladerf_load_fpga  device 1: %s\n", bladerf_strerror(status));
         return status;
     }
+
     fprintf(stdout, "bladerf_load_fpga device 1: %s\n", bladerf_strerror(status));
     return status;
 }
 
-int BladeRFConfigureChannel(struct bladerf *dev, struct module_config *c)
+int bladerf_configs_configure_channel(struct bladerf *dev, struct module_config *c)
 {
     int status;
     status = bladerf_set_frequency(dev, c->module, c->frequency);
@@ -76,20 +75,22 @@ int BladeRFConfigureChannel(struct bladerf *dev, struct module_config *c)
     }
     switch (c->module) {
         case BLADERF_MODULE_RX:
-            /* Configure the gains of the RX LNA, RX VGA1, and RX VGA2  */
             status = bladerf_set_lna_gain(dev, c->rx_lna);
+
             if (status != 0) {
                 fprintf(stderr, "Failed to set RX LNA gain: %s\n",
                         bladerf_strerror(status));
                 return status;
             }
             status = bladerf_set_rxvga1(dev, c->vga1);
+
             if (status != 0) {
                 fprintf(stderr, "Failed to set RX VGA1 gain: %s\n",
                         bladerf_strerror(status));
                 return status;
             }
             status = bladerf_set_rxvga2(dev, c->vga2);
+
             if (status != 0) {
                 fprintf(stderr, "Failed to set RX VGA2 gain: %s\n",
                         bladerf_strerror(status));
@@ -97,14 +98,16 @@ int BladeRFConfigureChannel(struct bladerf *dev, struct module_config *c)
             }
             break;
         case BLADERF_MODULE_TX:
-            /* Configure the TX VGA1 and TX VGA2 gains */
+
             status = bladerf_set_txvga1(dev, c->vga1);
+
             if (status != 0) {
                 fprintf(stderr, "Failed to set TX VGA1 gain: %s\n",
                         bladerf_strerror(status));
                 return status;
             }
             status = bladerf_set_txvga2(dev, c->vga2);
+
             if (status != 0) {
                 fprintf(stderr, "Failed to set TX VGA2 gain: %s\n",
                         bladerf_strerror(status));
@@ -120,9 +123,9 @@ int BladeRFConfigureChannel(struct bladerf *dev, struct module_config *c)
 }
 
 
-int BladeRFInitializeSyncRx(struct bladerf *dev)
+int bladerf_configs_config_sync_rx(struct bladerf *dev)
 {
-    int status;
+
     /* These items configure the underlying asynch stream used by the sync
      * interface. The "buffer" here refers to those used internally by worker
      * threads, not the user's sample buffers.
@@ -132,20 +135,19 @@ int BladeRFInitializeSyncRx(struct bladerf *dev)
      * bladerf_sync_tx call.  Similarly, samples will not be available to
      * RX via bladerf_sync_rx() until a block of `buffer_size` samples has been
      * received.
+     *
+     * Configure both the device's RX and TX modules for use with the synchronous
+     * interface. SC16 Q11 samples *without* metadata are used. 
      */
-    const unsigned int num_buffers   = NUMBER_OF_BUFFERS;
-    const unsigned int buffer_size   = BUFFER_SIZE;  /* Must be a multiple of 1024 */
-    const unsigned int num_transfers = NUMBER_OF_TRANSFERS;
-    const unsigned int timeout_ms    = TIMEOUT_IN_MS;
-    /* Configure both the device's RX and TX modules for use with the synchronous
-     * interface. SC16 Q11 samples *without* metadata are used. */
+    int status;
+    
     status = bladerf_sync_config(dev,
                                  BLADERF_RX_X1,
                                  BLADERF_FORMAT_SC16_Q11,
-                                 num_buffers,
-                                 buffer_size,
-                                 num_transfers,
-                                 timeout_ms);
+                                 NUMBER_OF_BUFFERS,
+                                 BUFFER_SIZE,
+                                 NUMBER_OF_TRANSFERS,
+                                 TIMEOUT_IN_MS);
     if (status != 0) {
         fprintf(stderr, "Failed to configure RX sync interface: %s\n", bladerf_strerror(status));
         return status;
@@ -159,9 +161,9 @@ int BladeRFInitializeSyncRx(struct bladerf *dev)
 }
 
 
-int BladeRFInitializeSyncTx(struct bladerf *dev)
+int bladerf_configs_config_sync_tx(struct bladerf *dev)
 {
-    int status;
+    
     /* These items configure the underlying asynch stream used by the sync
      * interface. The "buffer" here refers to those used internally by worker
      * threads, not the user's sample buffers.
@@ -171,21 +173,19 @@ int BladeRFInitializeSyncTx(struct bladerf *dev)
      * bladerf_sync_tx call.  Similarly, samples will not be available to
      * RX via bladerf_sync_rx() until a block of `buffer_size` samples has been
      * received.
+     *
+     * Configure both the device's RX and TX modules for use with the synchronous
+     * interface. SC16 Q11 samples *without* metadata are used. 
      */
-    const unsigned int num_buffers   = NUMBER_OF_BUFFERS;
-    const unsigned int buffer_size   = BUFFER_SIZE;  /* Must be a multiple of 1024 */
-    const unsigned int num_transfers = NUMBER_OF_TRANSFERS;
-    const unsigned int timeout_ms    = TIMEOUT_IN_MS;
-    /* Configure both the device's RX and TX modules for use with the synchronous
-     * interface. SC16 Q11 samples *without* metadata are used. */
-
+    int status;
+    
     status = bladerf_sync_config(dev,
                                  BLADERF_TX_X1,
                                  BLADERF_FORMAT_SC16_Q11,
-                                 num_buffers,
-                                 buffer_size,
-                                 num_transfers,
-                                 timeout_ms);
+                                 NUMBER_OF_BUFFERS,
+                                 BUFFER_SIZE,
+                                 NUMBER_OF_TRANSFERS,
+                                 TIMEOUT_IN_MS);
     if (status != 0) {
         fprintf(stderr, "Failed to configure TX sync interface: %s\n",
                 bladerf_strerror(status));
@@ -200,7 +200,7 @@ int BladeRFInitializeSyncTx(struct bladerf *dev)
     return status;
 }
 
-int BladeRFDCCalibration(struct bladerf *dev)
+int bladerf_configs_dc_calibration(struct bladerf *dev)
 {
 	int status = 0 ;
 	status = bladerf_calibrate_dc(dev, BLADERF_DC_CAL_LPF_TUNING);
@@ -212,7 +212,7 @@ int BladeRFDCCalibration(struct bladerf *dev)
 	return status;
 }
 
-int BladeRFSyncRx(struct bladerf *dev, void* fs, int is_ofdm )
+int bladerf_configs_sync_rx(struct bladerf *dev, void* fs, int is_ofdm )
 {
     int status=0, ret;
     bool process_status = false;
@@ -278,7 +278,7 @@ int BladeRFSyncRx(struct bladerf *dev, void* fs, int is_ofdm )
 
 }
 
-int BladeRFSyncTx(struct bladerf *dev,int16_t *tx_samples, unsigned int samples_len)
+int bladerf_configs_sync_tx(struct bladerf *dev,int16_t *tx_samples, unsigned int samples_len)
 {
 	int status = 0;
 

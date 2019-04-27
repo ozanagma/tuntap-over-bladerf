@@ -1,4 +1,4 @@
-#include "../includes/tun_tap.h"
+#include "../includes/tuntap.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +15,7 @@
 
 
 
-int tun_tap_device_alloc(char *device_name, int is_tun)
+int tuntap_device_alloc(char *device_name, int is_tun)
 {
   struct ifreq s_interface_request;
   int fd, err;
@@ -54,13 +54,13 @@ int tun_tap_device_alloc(char *device_name, int is_tun)
 }
 
 
-int read_tun_tap_device(int tun_tap_fd, char* buffer, int size){
+int tuntap_read(int tun_tap_fd, char* buffer, int size){
 
 	return read(tun_tap_fd, buffer, size);
 
 }
 
-int write_tun_tap_device(int tun_tap_fd, char* buffer, int size){
+int tuntap_write(int tun_tap_fd, char* buffer, int size){
 	return write(tun_tap_fd, buffer, size);
 }
 

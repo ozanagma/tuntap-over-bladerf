@@ -1,5 +1,5 @@
-#ifndef INCLUDE_BLADE_RF_H_
-#define INCLUDE_BLADE_RF_H_
+#ifndef INCLUDE_BLADERF_CONFIGS_H_
+#define INCLUDE_BLADERF_CONFIGS_H_
 
 #include "libbladeRF.h"
 #include <liquid/liquid.h>
@@ -37,14 +37,14 @@ struct module_config {
 
 
 
-int BladeRFGetDeviceSerials(struct bladerf_devinfo** _devices);
-void BladeRFOpenWithSerial(struct bladerf** dev, char *serial);
-int BladeRFLoadFPGA(struct bladerf *dev, const char *fpga);
-int BladeRFConfigureChannel(struct bladerf *dev, struct module_config *c);
-int BladeRFInitializeSyncRx(struct bladerf *dev);
-int BladeRFInitializeSyncTx(struct bladerf *dev);
-int BladeRFDCCalibration(struct bladerf *dev);
-int BladeRFSyncRx(struct bladerf *dev, void* fs, int is_ofdm );
-int BladeRFSyncTx(struct bladerf *dev,int16_t *tx_samples, unsigned int samples_len);
+int bladerf_configs_get_device_serials(struct bladerf_devinfo** _devices);
+void bladerf_configs_open_device_with_serial(struct bladerf** dev, char *serial);
+int bladerf_configs_load_fpga(struct bladerf *dev, const char *fpga);
+int bladerf_configs_configure_channel(struct bladerf *dev, struct module_config *c);
+int bladerf_configs_config_sync_rx(struct bladerf *dev);
+int bladerf_configs_config_sync_tx(struct bladerf *dev);
+int bladerf_configs_dc_calibration(struct bladerf *dev);
+int bladerf_configs_sync_rx(struct bladerf *dev, void* fs, int is_ofdm );
+int bladerf_configs_sync_tx(struct bladerf *dev,int16_t *tx_samples, unsigned int samples_len);
 
-#endif  /* INCLUDE_BLADE_RF_H_ */
+#endif  /* INCLUDE_BLADERF_CONFIGS_H_ */

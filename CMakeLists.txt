@@ -10,9 +10,9 @@ link_directories(/usr/local/lib)
 link_directories(/opt/local/lib)
 
 add_executable(tuntap_over_bladerf 	${PROJECT_SOURCE_DIR}/src/main.c
-	${PROJECT_SOURCE_DIR}/src/tun_tap.c
-	${PROJECT_SOURCE_DIR}/src/blade_rf.c
-	${PROJECT_SOURCE_DIR}/src/ofdmflexframe.c	
+	${PROJECT_SOURCE_DIR}/src/tuntap.c
+	${PROJECT_SOURCE_DIR}/src/bladerf_configs.c
+	${PROJECT_SOURCE_DIR}/src/ofdm_flexframe.c	
 )
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")

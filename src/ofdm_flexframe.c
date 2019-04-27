@@ -1,14 +1,9 @@
-/*
- * ofdmflexframe.c
- *
- *  Created on: Apr 20, 2019
- *      Author: thedog
- */
 
-#include "../includes/ofdmflexframe.h"
+#include "../includes/ofdm_flexframe.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <complex.h>
 #include <liquid/liquid.h>
@@ -29,7 +24,7 @@ typedef struct{
 
 static S_OFDM_PARAMS ofdm_params;
 
-void OfdmFlexFrameInit(void){
+void ofdm_flexframe_init(void){
 
 	memset(&ofdm_params, 0, sizeof(S_OFDM_PARAMS));
 
@@ -45,7 +40,7 @@ void OfdmFlexFrameInit(void){
 
 }
 
-void OfdmFlexFrameReceive(framesync_callback _callback, struct bladerf *p_bladerf_device, void* user_data){
+void ofdm_flexframe_receive(framesync_callback _callback, struct bladerf *p_bladerf_device, void* user_data){
 
     int status;
     unsigned int frame_counter = 0;
@@ -60,13 +55,13 @@ void OfdmFlexFrameReceive(framesync_callback _callback, struct bladerf *p_blader
     ofdmflexframesync fs = ofdmflexframesync_create(ofdm_params.num_of_sc, ofdm_params.cp_len, ofdm_params.taper_len, subcarrier_allocation, _callback, user_data);
     ofdmflexframesync_debug_enable(fs);
 
-    status =  BladeRFSyncRx(p_bladerf_device, fs, 1);
+    status =  bladerf_configs_sync_rx(p_bladerf_device, fs, 1);
 
 
     ofdmflexframesync_destroy(fs);
 }
 
-int OfdmFlexFrameTransmit(unsigned char tx_header[8],  unsigned char* tx_payload, int tx_payload_size, struct bladerf *p_bladerf_device){
+int ofdm_flexframe_transmit(unsigned char tx_header[8],  unsigned char* tx_payload, int tx_payload_size, struct bladerf *p_bladerf_device){
 
 
 	int status = 0;
@@ -133,7 +128,7 @@ int OfdmFlexFrameTransmit(unsigned char tx_header[8],  unsigned char* tx_payload
 		//return BLADERF_ERR_MEM;
 	}
 
-	status =  BladeRFSyncTx(p_bladerf_device, tx_samples, (num_of_symbol_in_frame * symbol_len ));
+	status =  bladerf_configs_sync_tx(p_bladerf_device, tx_samples, (num_of_symbol_in_frame * symbol_len ));
 	if (status != 0) {
 		fprintf(stderr, "Failed to sync_tx(). Exiting. %s\n", bladerf_strerror(status));
 	}

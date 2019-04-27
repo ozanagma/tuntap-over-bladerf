@@ -1,7 +1,7 @@
 
-#include "../includes/tun_tap.h"
-#include "../includes/blade_rf.h"
-#include "../includes/ofdmflexframe.h"
+#include "../includes/tuntap.h"
+#include "../includes/bladerf_configs.h"
+#include "../includes/ofdm_flexframe.h"
 
 #include <math.h>
 #include <complex.h>
@@ -48,12 +48,12 @@ int main(int argc, char *argv[])
     S_Main_Params params;
     memset(&params, 0, sizeof(S_Main_Params));
 
-/*
-    params.tun_file_descriptor = tun_tap_device_alloc(tun_interface_name, 1);
+
+    params.tun_file_descriptor = tuntap_device_alloc(argv[1], 1);
 	if (params.tun_file_descriptor < 0  ) {
-		printf("Error connecting to tun/tap interface %s!\n", tun_interface_name);
+		printf("Error connecting to tun/tap interface %s!\n", argv[1]);
 	}
-*/
+
 
     int status = 0;
     int total_device_number = 0;
@@ -66,38 +66,39 @@ int main(int argc, char *argv[])
 
 
     config_rx.module     = BLADERF_MODULE_RX;
-    config_rx.frequency = (unsigned int)atoi(argv[1]);
-    config_rx.bandwidth = (unsigned int)atoi(argv[2]);
-    config_rx.samplerate = (unsigned int)atoi(argv[3]);
-    config_rx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[4];
-    config_rx.vga1 = atoi(argv[5]);
-    config_rx.vga2 = atoi(argv[6]);
+    config_rx.frequency = (unsigned int)atoi(argv[2]);
+    config_rx.bandwidth = (unsigned int)atoi(argv[3]);
+    config_rx.samplerate = (unsigned int)atoi(argv[4]);
+    config_rx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[5];
+    config_rx.vga1 = atoi(argv[6]);
+    config_rx.vga2 = atoi(argv[7]);
 
     config_tx.module     = BLADERF_MODULE_TX;
-    config_tx.frequency = (unsigned int)atoi(argv[7]);
-    config_tx.bandwidth = (unsigned int)atoi(argv[8]);
-    config_tx.samplerate = (unsigned int)atoi(argv[9]);
-    config_tx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[10];
-    config_tx.vga1 = atoi(argv[11]);
-    config_tx.vga2 = atoi(argv[12]);
+    config_tx.frequency = (unsigned int)atoi(argv[8]);
+    config_tx.bandwidth = (unsigned int)atoi(argv[9]);
+    config_tx.samplerate = (unsigned int)atoi(argv[10]);
+    config_tx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[11];
+    config_tx.vga1 = atoi(argv[12]);
+    config_tx.vga2 = atoi(argv[13]);
         
 
-    total_device_number = BladeRFGetDeviceSerials(&p_dev_info);
+    total_device_number = bladerf_configs_get_device_serials(&p_dev_info);
 
-    BladeRFOpenWithSerial(&(params.p_bladerf_device), (p_dev_info)->serial);
+    bladerf_configs_open_device_with_serial(&(params.p_bladerf_device), (p_dev_info)->serial);
 
-    BladeRFLoadFPGA(params.p_bladerf_device,  "../../bladerf_fpga/hostedx115.rbf");
+    bladerf_configs_load_fpga(params.p_bladerf_device,  "../../bladerf_fpga/hostedx115.rbf");
 
-    status = BladeRFConfigureChannel(params.p_bladerf_device, &config_rx);
-    status = BladeRFConfigureChannel(params.p_bladerf_device, &config_tx);
+    status = bladerf_configs_configure_channel(params.p_bladerf_device, &config_rx);
+    status = bladerf_configs_configure_channel(params.p_bladerf_device, &config_tx);
 
-    status = BladeRFInitializeSyncRx(params.p_bladerf_device);
-    status = BladeRFInitializeSyncTx(params.p_bladerf_device);
+    status = bladerf_configs_config_sync_rx(params.p_bladerf_device);
+    status = bladerf_configs_config_sync_tx(params.p_bladerf_device);
 
-    status = BladeRFDCCalibration(params.p_bladerf_device);
+    status = bladerf_configs_dc_calibration(params.p_bladerf_device);
 
 
-    OfdmFlexFrameInit();
+    ofdm_flexframe_init();
+
     pthread_create(&receive_thread_id, NULL, receive_thread, (void *)(&params) );
     pthread_create(&transmit_thread_id, NULL, transmit_thread, (void *)(&params));
    
@@ -110,7 +111,7 @@ void* receive_thread(void* vargp)
 {
 	S_Main_Params* p_params = (S_Main_Params*)vargp;
 
-	OfdmFlexFrameReceive(mycallback, p_params->p_bladerf_device, vargp);
+	ofdm_flexframe_receive(mycallback, p_params->p_bladerf_device, vargp);
 
 }
 
@@ -137,7 +138,7 @@ void* transmit_thread(void* vargp)
 		sprintf((char*)payload,"Packet (%d)",cnt);
 		memset(&payload[13], 0x00, PAYLOAD_LENGTH-13);
 
-		ret = OfdmFlexFrameTransmit(header, payload, PAYLOAD_LENGTH, p_params->p_bladerf_device);
+		ret = ofdm_flexframe_transmit(header, payload, PAYLOAD_LENGTH, p_params->p_bladerf_device);
 
 	}
 }
