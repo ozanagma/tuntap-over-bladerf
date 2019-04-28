@@ -16,6 +16,7 @@
 #define  BANDWIDTH_USED (10 * MEGA_HZ)
 #define  SAMPLING_RATE_USED 600000
 #define  PAYLOAD_LENGTH 120
+#define  READ_BUFFER_SIZE 1500
 
 struct channel_config {
     bladerf_channel channel;
@@ -45,7 +46,7 @@ int bladerf_configs_configure_channel(struct bladerf *dev, struct module_config 
 int bladerf_configs_config_sync_rx(struct bladerf *dev);
 int bladerf_configs_config_sync_tx(struct bladerf *dev);
 int bladerf_configs_dc_calibration(struct bladerf *dev);
-int bladerf_configs_sync_rx(struct bladerf *dev, void* fs, int is_ofdm );
+int bladerf_configs_sync_rx(struct bladerf *dev, void* fs);
 int bladerf_configs_sync_tx(struct bladerf *dev,int16_t *tx_samples, unsigned int samples_len);
 
 #endif  /* INCLUDE_BLADERF_CONFIGS_H_ */

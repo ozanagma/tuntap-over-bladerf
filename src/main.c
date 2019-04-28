@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 
 
     config_rx.module     = BLADERF_MODULE_RX;
-    config_rx.frequency = 1250 * MEGA_HZ ;// (unsigned int)atoi(argv[2]);
+    config_rx.frequency = 1310 * MEGA_HZ ;// (unsigned int)atoi(argv[2]);
     config_rx.bandwidth = BLADERF_BANDWIDTH_MAX ;//(unsigned int)atoi(argv[3]);
     config_rx.samplerate = BLADERF_SAMPLERATE_REC_MAX / 4;//(unsigned int)atoi(argv[4]);
     config_rx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[5];
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     config_rx.vga2 = 15;//atoi(argv[7]);
 
     config_tx.module     = BLADERF_MODULE_TX;
-    config_tx.frequency = 1300 * MEGA_HZ;//(unsigned int)atoi(argv[8]);
+    config_tx.frequency = 1290 * MEGA_HZ;//(unsigned int)atoi(argv[8]);
     config_tx.bandwidth = BLADERF_BANDWIDTH_MAX;//(unsigned int)atoi(argv[9]);
     config_tx.samplerate = BLADERF_SAMPLERATE_REC_MAX / 4;//(unsigned int)atoi(argv[10]);
     config_tx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[11];
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
     ofdm_flexframe_init();
 
-    pthread_create(&receive_thread_id, NULL, receive_thread, (void *)(&params) );
+    //pthread_create(&receive_thread_id, NULL, receive_thread, (void *)(&params) );
     pthread_create(&transmit_thread_id, NULL, transmit_thread, (void *)(&params));
    
 	
@@ -124,9 +124,8 @@ void* transmit_thread(void* vargp)
 
 	S_Main_Params* p_params = (S_Main_Params*)vargp;
 	int ret = 0;
-	int cnt = 0;
-    unsigned char header[8] = {0};        // data header
-    unsigned char payload[PAYLOAD_LENGTH]={0};//
+    unsigned char header[8] = {0};     
+    unsigned char read_buffer[READ_BUFFER_SIZE]={0};//
 
     for(int i = 0; i < 8; i++){
     	header[i] = i;
@@ -134,10 +133,10 @@ void* transmit_thread(void* vargp)
 
 
 	while(0 == ret){
-		int len;
-         len = tuntap_read(p_params->tun_file_descriptor, (char*)payload, PAYLOAD_LENGTH);
-        if(len > 0){
-            ret = ofdm_flexframe_transmit(header, payload, len, p_params->p_bladerf_device);
+		int payload_size;
+        payload_size = tuntap_read(p_params->tun_file_descriptor, (char*)read_buffer, READ_BUFFER_SIZE);
+        if(payload_size > 0){
+            ret = ofdm_flexframe_transmit(header, read_buffer, payload_size, p_params->p_bladerf_device);
         }
 	}
 

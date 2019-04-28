@@ -53,17 +53,14 @@ void ofdm_flexframe_receive(framesync_callback _callback, struct bladerf *p_blad
     ofdmframe_print_sctype(subcarrier_allocation, ofdm_params.number_of_subcarriers);
 
     ofdmflexframesync fs = ofdmflexframesync_create(ofdm_params.number_of_subcarriers, ofdm_params.cyclic_prefix_len, ofdm_params.taper_len, subcarrier_allocation, _callback, user_data);
-    ofdmflexframesync_debug_enable(fs);
-
-    status =  bladerf_configs_sync_rx(p_bladerf_device, fs, 1);
-
+    
+    status =  bladerf_configs_sync_rx(p_bladerf_device, fs);
 
     ofdmflexframesync_destroy(fs);
 }
 
-int ofdm_flexframe_transmit(unsigned char tx_header[8],  unsigned char* tx_payload, int tx_payload_size, struct bladerf *p_bladerf_device){
-
-
+int ofdm_flexframe_transmit(unsigned char tx_header[8],  unsigned char* tx_payload, int tx_payload_size, struct bladerf *p_bladerf_device)
+{
 	int status = 0;
 	int16_t *tx_samples = NULL;
 
