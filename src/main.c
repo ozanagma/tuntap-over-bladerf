@@ -48,12 +48,13 @@ int main(int argc, char *argv[])
     S_Main_Params params;
     memset(&params, 0, sizeof(S_Main_Params));
 
-
-    params.tun_file_descriptor = tuntap_device_alloc(argv[1], 1);
+    char tun_interface_name[IFNAMSIZ] = "tundevice0"; 
+    params.tun_file_descriptor = tuntap_device_alloc(tun_interface_name/*argv[1]*/, 1);
 	if (params.tun_file_descriptor < 0  ) {
 		printf("Error connecting to tun/tap interface %s!\n", argv[1]);
 	}
 
+    printf("tun file descriptor: %d\n", params.tun_file_descriptor);
 
     int status = 0;
     int total_device_number = 0;
@@ -66,27 +67,27 @@ int main(int argc, char *argv[])
 
 
     config_rx.module     = BLADERF_MODULE_RX;
-    config_rx.frequency = (unsigned int)atoi(argv[2]);
-    config_rx.bandwidth = (unsigned int)atoi(argv[3]);
-    config_rx.samplerate = (unsigned int)atoi(argv[4]);
+    config_rx.frequency = 1250 * MEGA_HZ ;// (unsigned int)atoi(argv[2]);
+    config_rx.bandwidth = BLADERF_BANDWIDTH_MAX ;//(unsigned int)atoi(argv[3]);
+    config_rx.samplerate = BLADERF_SAMPLERATE_REC_MAX / 4;//(unsigned int)atoi(argv[4]);
     config_rx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[5];
-    config_rx.vga1 = atoi(argv[6]);
-    config_rx.vga2 = atoi(argv[7]);
+    config_rx.vga1 = 30;//atoi(argv[6]);
+    config_rx.vga2 = 15;//atoi(argv[7]);
 
     config_tx.module     = BLADERF_MODULE_TX;
-    config_tx.frequency = (unsigned int)atoi(argv[8]);
-    config_tx.bandwidth = (unsigned int)atoi(argv[9]);
-    config_tx.samplerate = (unsigned int)atoi(argv[10]);
+    config_tx.frequency = 1300 * MEGA_HZ;//(unsigned int)atoi(argv[8]);
+    config_tx.bandwidth = BLADERF_BANDWIDTH_MAX;//(unsigned int)atoi(argv[9]);
+    config_tx.samplerate = BLADERF_SAMPLERATE_REC_MAX / 4;//(unsigned int)atoi(argv[10]);
     config_tx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[11];
-    config_tx.vga1 = atoi(argv[12]);
-    config_tx.vga2 = atoi(argv[13]);
+    config_tx.vga1 = -4;//atoi(argv[12]);
+    config_tx.vga2 = 25;//atoi(argv[13]);
         
 
     total_device_number = bladerf_configs_get_device_serials(&p_dev_info);
 
     bladerf_configs_open_device_with_serial(&(params.p_bladerf_device), (p_dev_info)->serial);
 
-    bladerf_configs_load_fpga(params.p_bladerf_device,  "../../bladerf_fpga/hostedx115.rbf");
+    bladerf_configs_load_fpga(params.p_bladerf_device,  "./bladerf_fpga/hostedx115.rbf");
 
     status = bladerf_configs_configure_channel(params.p_bladerf_device, &config_rx);
     status = bladerf_configs_configure_channel(params.p_bladerf_device, &config_tx);
@@ -103,6 +104,8 @@ int main(int argc, char *argv[])
     pthread_create(&transmit_thread_id, NULL, transmit_thread, (void *)(&params));
    
 	
+    while(1000000000);
+
     return 0;
 }
 
@@ -131,16 +134,13 @@ void* transmit_thread(void* vargp)
 
 
 	while(0 == ret){
-		//TODO fill payload
-		cnt++;
-
-		memset(payload, 0x00, PAYLOAD_LENGTH); //
-		sprintf((char*)payload,"Packet (%d)",cnt);
-		memset(&payload[13], 0x00, PAYLOAD_LENGTH-13);
-
-		ret = ofdm_flexframe_transmit(header, payload, PAYLOAD_LENGTH, p_params->p_bladerf_device);
-
+		int len;
+         len = tuntap_read(p_params->tun_file_descriptor, (char*)payload, PAYLOAD_LENGTH);
+        if(len > 0){
+            ret = ofdm_flexframe_transmit(header, payload, len, p_params->p_bladerf_device);
+        }
 	}
+
 }
 
 static int mycallback(unsigned char *  _header,
@@ -152,25 +152,24 @@ static int mycallback(unsigned char *  _header,
                       void *           _userdata)
 {
 
-	static int counter = 0;
-
-
+	S_Main_Params* p_params = (S_Main_Params*)_userdata;
 
 	if ( _header_valid  )
 	{
-		//printf("Packet %u contains (%s) with RSSI %5.5f\n", *counter, _payload, _stats.rssi);
 
-        unsigned int n = 6;
-        unsigned char payload[PAYLOAD_LENGTH]={0};
-        snprintf((char * )payload, 8, "Packet ");
-        unsigned int num_bit_errors = count_bit_errors_array(payload, _payload, n);
-        printf("[%u]: (%s):  %3u / %3u\tRSSI=(%5.5f)\n", counter, _payload, num_bit_errors, n*8, _stats.rssi);
-        //TODO: _payload => tuntap_write
+		static int counter = 0;
+
+		printf("[%u]: (%s):  \tRSSI=(%5.5f)\n", counter, _payload, _stats.rssi);
+
+		int len = tuntap_write(p_params->tun_file_descriptor, (char*)_payload, _payload_len);
+		if(len != _payload_len){
+			perror("cannot write to tun_file");
+		}
+		counter++;
 	}
 
-	counter++;
 
-    return 0;
+return 0;
 }
 
 int fork_child_process(char* path_to_exe)

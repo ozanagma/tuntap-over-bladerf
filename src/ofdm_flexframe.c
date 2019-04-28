@@ -10,9 +10,9 @@
 
 
 typedef struct{
-	unsigned int num_of_sc ;              // number of subcarriers
-	unsigned int cp_len;              // cyclic prefix length
-	unsigned int taper_len;               // taper length
+	unsigned int number_of_subcarriers ;          
+	unsigned int cyclic_prefix_len;              
+	unsigned int taper_len;               
 	unsigned int payload_len;
 
 	modulation_scheme mod_sch;   // payload modulation scheme
@@ -28,13 +28,13 @@ void ofdm_flexframe_init(void){
 
 	memset(&ofdm_params, 0, sizeof(S_OFDM_PARAMS));
 
-	ofdm_params.num_of_sc = 64;
-	ofdm_params.cp_len = 16;
+	ofdm_params.number_of_subcarriers = 64;
+	ofdm_params.cyclic_prefix_len = 16;
 	ofdm_params.taper_len = 4;
 	ofdm_params.payload_len = 120;
 	ofdm_params.mod_sch = LIQUID_MODEM_PSK2;
-	ofdm_params.fec0 = LIQUID_FEC_NONE;
-	ofdm_params.fec1 = LIQUID_FEC_HAMMING128;
+	ofdm_params.fec0 = LIQUID_FEC_SECDED7264;
+	ofdm_params.fec1 = LIQUID_FEC_SECDED7264;
 	ofdm_params.check = LIQUID_CRC_32;
 
 
@@ -44,15 +44,15 @@ void ofdm_flexframe_receive(framesync_callback _callback, struct bladerf *p_blad
 
     int status;
     unsigned int frame_counter = 0;
-    unsigned char subcarrier_allocation[ofdm_params.num_of_sc];
+    unsigned char subcarrier_allocation[ofdm_params.number_of_subcarriers];
 
-    ofdmframe_init_sctype_range(ofdm_params.num_of_sc, -0.25, 0.25, subcarrier_allocation);
+    ofdmframe_init_sctype_range(ofdm_params.number_of_subcarriers, -0.25, 0.25, subcarrier_allocation);
 
-    //ofdmframe_init_default_sctype(ofdm_params.num_of_sc, subcarrier_allocation);
+    //ofdmframe_init_default_sctype(ofdm_params.number_of_subcarriers, subcarrier_allocation);
 
-    ofdmframe_print_sctype(subcarrier_allocation, ofdm_params.num_of_sc);
+    ofdmframe_print_sctype(subcarrier_allocation, ofdm_params.number_of_subcarriers);
 
-    ofdmflexframesync fs = ofdmflexframesync_create(ofdm_params.num_of_sc, ofdm_params.cp_len, ofdm_params.taper_len, subcarrier_allocation, _callback, user_data);
+    ofdmflexframesync fs = ofdmflexframesync_create(ofdm_params.number_of_subcarriers, ofdm_params.cyclic_prefix_len, ofdm_params.taper_len, subcarrier_allocation, _callback, user_data);
     ofdmflexframesync_debug_enable(fs);
 
     status =  bladerf_configs_sync_rx(p_bladerf_device, fs, 1);
@@ -68,11 +68,11 @@ int ofdm_flexframe_transmit(unsigned char tx_header[8],  unsigned char* tx_paylo
 	int16_t *tx_samples = NULL;
 
 	// allocate memory for header, payload, sample buffer
-	unsigned int symbol_len = ofdm_params.num_of_sc + ofdm_params.cp_len;       // samples per OFDM symbol
+	unsigned int symbol_len = ofdm_params.number_of_subcarriers + ofdm_params.cyclic_prefix_len;       // samples per OFDM symbol
 	unsigned int num_of_symbol_in_frame = 0;
 	float complex buffer[symbol_len];           // time-domain buffer
 	float complex frame_buffer[BUFFER_SIZE];           // frame buffer
-	unsigned char subcarrier_allocation[ofdm_params.num_of_sc];
+	unsigned char subcarrier_allocation[ofdm_params.number_of_subcarriers];
 
 
 
@@ -87,10 +87,10 @@ int ofdm_flexframe_transmit(unsigned char tx_header[8],  unsigned char* tx_paylo
     fgprops.fec1            = ofdm_params.fec1;         // set the outer FEC scheme
     fgprops.mod_scheme      = ofdm_params.mod_sch;           // set the modulation scheme
 
-	ofdmframe_init_sctype_range(ofdm_params.num_of_sc, -0.25, 0.25, subcarrier_allocation);
+	ofdmframe_init_sctype_range(ofdm_params.number_of_subcarriers, -0.25, 0.25, subcarrier_allocation);
 
 
-    ofdmflexframegen fg = ofdmflexframegen_create(ofdm_params.num_of_sc, ofdm_params.cp_len, ofdm_params.taper_len, subcarrier_allocation, &fgprops);
+    ofdmflexframegen fg = ofdmflexframegen_create(ofdm_params.number_of_subcarriers, ofdm_params.cyclic_prefix_len, ofdm_params.taper_len, subcarrier_allocation, &fgprops);
 
 
     ofdmflexframegen_assemble(fg, tx_header, tx_payload, tx_payload_size);

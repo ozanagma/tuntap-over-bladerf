@@ -1,0 +1,130 @@
+#!/bin/bash
+
+: ${DIALOG_OK=0}
+: ${DIALOG_CANCEL=1}
+: ${DIALOG_HELP=2}
+: ${DIALOG_EXTRA=3}
+: ${DIALOG_ITEM_HELP=4}
+: ${DIALOG_ESC=255}
+
+tempfile=$(tempfile 2>/dev/null) || tempfile=/tmp/test$$
+trap "rm -f $tempfile" 0 1 2 5 15
+
+
+dialog --title "BladeRf Driver" --clear \
+        --msgbox "This is a user interface for setting BladeRF parameters. User can set miscellaneous parameters such as bandwith, frequency gain. To continue please enter \"OK\" button. " 10 60 2> $tempfile
+
+retval=$?
+
+case $retval in
+  $DIALOG_OK)
+    ;;
+  $DIALOG_ESC)
+    if test -s $tempfile ; then
+      cat $tempfile 
+      exit 1
+    else
+      exit 1
+    fi
+    ;;
+esac
+
+
+
+tuntap_params=$(dialog --backtitle "Dialog Form Example" --title "TUN/TAP Interface Parameters" \
+--ok-label "Submit" \
+--form "\n Please enter TUN/TAP interface parameters." 		20 60 16 \
+"Select interface type:" 1 1 "tun" 		1 25 25 30 \
+"Enter device name:" 	 2 1 "tundevice0" 	2 25 25 30 \
+"Enter ip address:" 	 3 1 "192.2.1.1" 	3 25 25 30 \
+"Enter subnet:" 	 4 1 "24" 		4 25 25 30 2>&1 >/dev/tty)
+
+
+i=0
+while read -r line; do
+   ((i++))
+   declare var_tuntap$i="${line}"
+done <<< "${tuntap_params}"
+
+
+retval=$?
+
+case $retval in
+  $DIALOG_OK)
+    ;;
+  $DIALOG_ESC)
+    if test -s $tempfile ; then
+      cat $tempfile 
+      exit 1
+    else
+      exit 1
+    fi
+    ;;
+esac
+
+if [ $var_tuntap1 == "tun" ]
+then
+	sudo ip tuntap add name $var_tuntap2 mode tun
+	
+elif [ $var_tuntap1 == "tap" ]
+then
+	sudo ip tuntap add name $var_tuntap2 mode tap
+else
+	sudo echo "Error: unvalid mode."
+	exit 1
+fi
+
+
+#IP address is waiting from user
+
+if  ! [[ $var_tuntap3 =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]
+then
+	sudo echo "Error: unvalid ip address."
+	exit 1
+fi
+
+
+#Netmask is waiting from user. If ıt is valid device is created.
+
+
+
+if ! [[ $var_tuntap4 -ge 0  && $var_tuntap4 -lt 32 ]]
+then
+
+	sudo echo "Error: unvalid netmask."
+	exit 1
+fi
+
+#device name
+
+sudo ip address add $var_tuntap3/$var_tuntap4 dev $var_tuntap2
+sudo ip link set $var_tuntap2 up
+
+
+
+
+device_params=$(dialog --backtitle "Form" --title "Device Config Parameters" \
+--ok-label "Submit" \
+--form "\n Please enter device configuration parameters." 	20 70 0 \
+"Rx frequency:" 	1  0 "400000000"      	   1 15 15 0 \
+"Rx bandwidth:"    	2  0 "10000000"	   	   2 15 15 0 \
+"Rx samplerate:" 	3  0 "600000"      	   3 15 15 0 \
+"Rx lna:"    		4  0 "6"	    	   4 15 15 0 \
+"Rx vga1:"    		5  0 "30"	    	   5 15 15 0 \
+"Rx vga2:"    		6  0 "15"	    	   6 15 15 0 \
+"Tx frequency:"   	1  35 "400000000"     	   1 50 15 0 \
+"Tx bandwidth:"     	2  35 "10000000"	   2 50 15 0 \
+"Tx samplerate:"	3  35 "600000"     	   3 50 15 0 \
+"Tx lna:"     		4  35 "6"		   4 50	15 0 \
+"Tx vga1:"     		5  35 "-4"		   5 50	15 0 \
+"Tx vga2:"     		6  35 "25"		   6 50	15 0 2>&1 >/dev/tty)
+
+i=0
+while read -r line; do
+   declare arg$i="${line}"
+   ((i++))
+done <<< "${device_params}"
+
+cd debug
+./tuntap_over_bladerf $var_tuntap2 $arg0 $arg1 $arg2 $arg3 $arg4 $arg5 $arg6 $arg7 $arg8 $arg9 $arg10 $arg11 
+

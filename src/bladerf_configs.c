@@ -34,7 +34,7 @@ void bladerf_configs_open_device_with_serial(struct bladerf **dev, char *serial)
         return;   
     }
 
-    fprintf(stderr, "Failed to open device with serial=%s (%s)\n", serial, bladerf_strerror(status)); 
+   // fprintf(stderr, "Failed to open device with serial=%s (%s)\n", serial, bladerf_strerror(status)); 
     return; 
 
 }
@@ -57,19 +57,19 @@ int bladerf_configs_configure_channel(struct bladerf *dev, struct module_config 
     int status;
     status = bladerf_set_frequency(dev, c->module, c->frequency);
     if (status != 0) {
-        fprintf(stderr, "Failed to set frequency = %u: %s\n",
+        fprintf(stderr, "Failed to set frequency = %llu: %s\n",
                 c->frequency, bladerf_strerror(status));
         return status;
     }
     status = bladerf_set_sample_rate(dev, c->module, c->samplerate, NULL);
     if (status != 0) {
-        fprintf(stderr, "Failed to set samplerate = %u: %s\n",
+        fprintf(stderr, "Failed to set samplerate = %llu: %s\n",
                 c->samplerate, bladerf_strerror(status));
         return status;
     }
     status = bladerf_set_bandwidth(dev, c->module, c->bandwidth, NULL);
     if (status != 0) {
-        fprintf(stderr, "Failed to set bandwidth = %u: %s\n",
+        fprintf(stderr, "Failed to set bandwidth = %llu: %s\n",
                 c->bandwidth, bladerf_strerror(status));
         return status;
     }

@@ -11,24 +11,25 @@
 #define  TIMEOUT_IN_MS 1000
 
 #define  MEGA_HZ 1000000
-#define  FREQUENCY_USED (400 * MEGA_HZ)//713000000
+#define  TX_FREQUENCY_USED (300 * MEGA_HZ)
+#define  RX_FREQUENCY_USED (350 * MEGA_HZ)
 #define  BANDWIDTH_USED (10 * MEGA_HZ)
 #define  SAMPLING_RATE_USED 600000
 #define  PAYLOAD_LENGTH 120
 
 struct channel_config {
     bladerf_channel channel;
-    unsigned int frequency;
-    unsigned int bandwidth;
-    unsigned int samplerate;
+    unsigned long long frequency;
+    unsigned long long bandwidth;
+    unsigned long long samplerate;
     int gain;
 };
 
 struct module_config {
     bladerf_module module;
-    unsigned int frequency;
-    unsigned int bandwidth;
-    unsigned int samplerate;
+    unsigned long long frequency;
+    unsigned long long bandwidth;
+    unsigned long long samplerate;
     /* Gains */
     bladerf_lna_gain rx_lna;
     int vga1;
