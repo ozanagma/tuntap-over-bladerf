@@ -17,6 +17,7 @@
 #define  SAMPLING_RATE_USED 600000
 #define  PAYLOAD_LENGTH 1500 // MTU
 
+
 struct channel_config {
     bladerf_channel channel;
     unsigned long long frequency;

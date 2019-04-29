@@ -216,6 +216,7 @@ int bladerf_configs_sync_rx(struct bladerf *dev, void* fs)
 {
     int status=0, ret;
     bool process_status = false;
+
     /* "User" samples buffers and their associated sizes, in units of samples.
      * Recall that one sample = two int16_t values. */
     int16_t *rx_samples = NULL;
@@ -223,6 +224,7 @@ int bladerf_configs_sync_rx(struct bladerf *dev, void* fs)
     /* Allocate a buffer to store received samples in */
 
     rx_samples = (int16_t *)malloc(samples_len * 2 * sizeof(int16_t));
+
     if (rx_samples == NULL) {
         fprintf(stdout, "malloc error: %s\n", bladerf_strerror(status));
         return BLADERF_ERR_MEM;
@@ -232,6 +234,7 @@ int bladerf_configs_sync_rx(struct bladerf *dev, void* fs)
     struct bladerf_metadata meta;
     memset(&meta, 0, sizeof(meta));
     /* Retrieve the current timestamp */
+
     if ((status=bladerf_get_timestamp(dev, BLADERF_RX, &meta.timestamp)) != 0) {
         fprintf(stderr,"Failed to get current RX timestamp: %s\n",bladerf_strerror(status));
     }
@@ -242,16 +245,15 @@ int bladerf_configs_sync_rx(struct bladerf *dev, void* fs)
         status = bladerf_sync_rx(dev, rx_samples, samples_len, &meta, 5000);
         //fprintf(stdout, "Meta Flag Actual Count = %u\n", meta.actual_count );
         if (status == 0) {
+<<<<<<< HEAD
             /* TODO Process these samples, and potentially produce a response to transmit */
         	process_status = process_samples_ofdm_flex_frame(rx_samples, meta.actual_count, fs);
-
         	if(process_status != 0){
         		fprintf(stderr, "Failed to Process samples: %s\n", bladerf_strerror(process_status));
         	}
         	//printf("Process_samples run: %d\n", status);
-
-
-        } else {
+        } 
+        else {
             fprintf(stderr, "Failed to RX samples: %s\n", bladerf_strerror(status));
         }
     }
