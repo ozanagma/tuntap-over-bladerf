@@ -16,9 +16,12 @@ typedef struct{
 	unsigned int payload_len;
 
 	modulation_scheme mod_sch;   // payload modulation scheme
-	fec_scheme fec0;         // inner FEC scheme
-	fec_scheme fec1;   // outer FEC scheme
+	fec_scheme fec0;       
+	fec_scheme fec1;   
 	crc_scheme check;
+	float subcarrier_alloc_range_f0;
+	float subcarrier_alloc_range_f1;
+	unsigned char* subcarrier_allocation;
 }S_OFDM_PARAMS;
 
 
@@ -31,32 +34,26 @@ void ofdm_flexframe_init(void){
 	ofdm_params.number_of_subcarriers = 64;
 	ofdm_params.cyclic_prefix_len = 16;
 	ofdm_params.taper_len = 4;
-	ofdm_params.payload_len = 120;
 	ofdm_params.mod_sch = LIQUID_MODEM_PSK2;
-	ofdm_params.fec0 = LIQUID_FEC_SECDED7264;
-	ofdm_params.fec1 = LIQUID_FEC_SECDED7264;
+	ofdm_params.fec0 = LIQUID_FEC_HAMMING128;
+	ofdm_params.fec1 = LIQUID_FEC_HAMMING128;
 	ofdm_params.check = LIQUID_CRC_32;
+	ofdm_params.subcarrier_alloc_range_f0 = -0.15;
+	ofdm_params.subcarrier_alloc_range_f1 = 0.15;
+	ofdm_params.subcarrier_allocation = (unsigned char*)malloc(ofdm_params.number_of_subcarriers * sizeof(unsigned char));
 
+	ofdmframe_init_sctype_range(ofdm_params.number_of_subcarriers, ofdm_params.subcarrier_alloc_range_f0, ofdm_params.subcarrier_alloc_range_f1, ofdm_params.subcarrier_allocation);
 
+    ofdmframe_print_sctype(ofdm_params.subcarrier_allocation, ofdm_params.number_of_subcarriers);
 }
 
 void ofdm_flexframe_receive(framesync_callback _callback, struct bladerf *p_bladerf_device, void* user_data){
 
     int status;
-    unsigned int frame_counter = 0;
-    unsigned char subcarrier_allocation[ofdm_params.number_of_subcarriers];
 
-    ofdmframe_init_sctype_range(ofdm_params.number_of_subcarriers, -0.25, 0.25, subcarrier_allocation);
+    ofdmflexframesync fs = ofdmflexframesync_create(ofdm_params.number_of_subcarriers, ofdm_params.cyclic_prefix_len, ofdm_params.taper_len, ofdm_params.subcarrier_allocation, _callback, user_data);
 
-    //ofdmframe_init_default_sctype(ofdm_params.number_of_subcarriers, subcarrier_allocation);
-
-    ofdmframe_print_sctype(subcarrier_allocation, ofdm_params.number_of_subcarriers);
-
-    ofdmflexframesync fs = ofdmflexframesync_create(ofdm_params.number_of_subcarriers, ofdm_params.cyclic_prefix_len, ofdm_params.taper_len, subcarrier_allocation, _callback, user_data);
-    ofdmflexframesync_debug_enable(fs);
-
-    status =  bladerf_configs_sync_rx(p_bladerf_device, fs, 1);
-
+    status =  bladerf_configs_sync_rx(p_bladerf_device, fs);
 
     ofdmflexframesync_destroy(fs);
 }
@@ -72,10 +69,6 @@ int ofdm_flexframe_transmit(unsigned char tx_header[8],  unsigned char* tx_paylo
 	unsigned int num_of_symbol_in_frame = 0;
 	float complex buffer[symbol_len];           // time-domain buffer
 	float complex frame_buffer[BUFFER_SIZE];           // frame buffer
-	unsigned char subcarrier_allocation[ofdm_params.number_of_subcarriers];
-
-
-
 
     // re-configure frame generator with different properties
     ofdmflexframegenprops_s fgprops;
@@ -87,15 +80,12 @@ int ofdm_flexframe_transmit(unsigned char tx_header[8],  unsigned char* tx_paylo
     fgprops.fec1            = ofdm_params.fec1;         // set the outer FEC scheme
     fgprops.mod_scheme      = ofdm_params.mod_sch;           // set the modulation scheme
 
-	ofdmframe_init_sctype_range(ofdm_params.number_of_subcarriers, -0.25, 0.25, subcarrier_allocation);
 
 
-    ofdmflexframegen fg = ofdmflexframegen_create(ofdm_params.number_of_subcarriers, ofdm_params.cyclic_prefix_len, ofdm_params.taper_len, subcarrier_allocation, &fgprops);
+    ofdmflexframegen fg = ofdmflexframegen_create(ofdm_params.number_of_subcarriers, ofdm_params.cyclic_prefix_len, ofdm_params.taper_len, ofdm_params.subcarrier_allocation, &fgprops);
 
 
     ofdmflexframegen_assemble(fg, tx_header, tx_payload, tx_payload_size);
-    //ofdmflexframegen_print(fg);
-
 
     num_of_symbol_in_frame = ofdmflexframegen_getframelen(fg);
 
@@ -109,7 +99,7 @@ int ofdm_flexframe_transmit(unsigned char tx_header[8],  unsigned char* tx_paylo
 		lastpos = lastpos + symbol_len;
 	}
 
-	printf("number of samples %u %u\n", symbol_len, lastpos);
+	//printf("number of samples %u %u\n", symbol_len, lastpos);
 
 	tx_samples = (int16_t *)malloc(num_of_symbol_in_frame * 2 * sizeof(int16_t)*symbol_len);
     if (tx_samples != NULL) {
@@ -132,10 +122,12 @@ int ofdm_flexframe_transmit(unsigned char tx_header[8],  unsigned char* tx_paylo
 	if (status != 0) {
 		fprintf(stderr, "Failed to sync_tx(). Exiting. %s\n", bladerf_strerror(status));
 	}
-	fprintf(stdout, "TxPacket: %s\n", tx_payload);
-	usleep(10000);
+
+	usleep(20000);
 
     ofdmflexframegen_destroy(fg);
+	
+	free(tx_samples);
 
 	return status;
 

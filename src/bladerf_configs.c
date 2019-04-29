@@ -212,7 +212,7 @@ int bladerf_configs_dc_calibration(struct bladerf *dev)
 	return status;
 }
 
-int bladerf_configs_sync_rx(struct bladerf *dev, void* fs, int is_ofdm )
+int bladerf_configs_sync_rx(struct bladerf *dev, void* fs)
 {
     int status=0, ret;
     bool process_status = false;
@@ -235,11 +235,6 @@ int bladerf_configs_sync_rx(struct bladerf *dev, void* fs, int is_ofdm )
     if ((status=bladerf_get_timestamp(dev, BLADERF_RX, &meta.timestamp)) != 0) {
         fprintf(stderr,"Failed to get current RX timestamp: %s\n",bladerf_strerror(status));
     }
-    else
-    {
-        printf("Current RX timestamp: 0x%016"PRIx64"\n", meta.timestamp);
-    }
-
       meta.flags = BLADERF_META_FLAG_RX_NOW;
 
     while (status == 0) {
@@ -248,12 +243,7 @@ int bladerf_configs_sync_rx(struct bladerf *dev, void* fs, int is_ofdm )
         //fprintf(stdout, "Meta Flag Actual Count = %u\n", meta.actual_count );
         if (status == 0) {
             /* TODO Process these samples, and potentially produce a response to transmit */
-        	if(is_ofdm){
-        		process_status = process_samples_ofdm_flex_frame(rx_samples, meta.actual_count, fs);
-        	} else {
-        		process_status = process_samples_flex_frame(rx_samples, meta.actual_count, fs);
-        	}
-
+        	process_status = process_samples_ofdm_flex_frame(rx_samples, meta.actual_count, fs);
 
         	if(process_status != 0){
         		fprintf(stderr, "Failed to Process samples: %s\n", bladerf_strerror(process_status));
@@ -272,8 +262,9 @@ int bladerf_configs_sync_rx(struct bladerf *dev, void* fs, int is_ofdm )
     }
 
 	ret = status;
-	/* Free up our resources */
+
 	free(rx_samples);
+    
 	return ret;
 
 }

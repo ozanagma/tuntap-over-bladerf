@@ -54,8 +54,6 @@ int main(int argc, char *argv[])
 		printf("Error connecting to tun/tap interface %s!\n", argv[1]);
 	}
 
-    printf("tun file descriptor: %d\n", params.tun_file_descriptor);
-
     int status = 0;
     int total_device_number = 0;
     struct module_config config_rx;
@@ -67,17 +65,17 @@ int main(int argc, char *argv[])
 
 
     config_rx.module     = BLADERF_MODULE_RX;
-    config_rx.frequency = 1250 * MEGA_HZ ;// (unsigned int)atoi(argv[2]);
+    config_rx.frequency = 1330 * MEGA_HZ ;// (unsigned int)atoi(argv[2]);
     config_rx.bandwidth = BLADERF_BANDWIDTH_MAX ;//(unsigned int)atoi(argv[3]);
-    config_rx.samplerate = BLADERF_SAMPLERATE_REC_MAX / 4;//(unsigned int)atoi(argv[4]);
+    config_rx.samplerate = BLADERF_SAMPLERATE_REC_MAX / 10;//(unsigned int)atoi(argv[4]);
     config_rx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[5];
     config_rx.vga1 = 30;//atoi(argv[6]);
     config_rx.vga2 = 15;//atoi(argv[7]);
 
     config_tx.module     = BLADERF_MODULE_TX;
-    config_tx.frequency = 1300 * MEGA_HZ;//(unsigned int)atoi(argv[8]);
+    config_tx.frequency = 1290 * MEGA_HZ; //(unsigned int)atoi(argv[8]);
     config_tx.bandwidth = BLADERF_BANDWIDTH_MAX;//(unsigned int)atoi(argv[9]);
-    config_tx.samplerate = BLADERF_SAMPLERATE_REC_MAX / 4;//(unsigned int)atoi(argv[10]);
+    config_tx.samplerate = BLADERF_SAMPLERATE_REC_MAX / 10;//(unsigned int)atoi(argv[10]);
     config_tx.rx_lna = BLADERF_LNA_GAIN_MAX;//argv[11];
     config_tx.vga1 = -4;//atoi(argv[12]);
     config_tx.vga2 = 25;//atoi(argv[13]);
@@ -96,15 +94,14 @@ int main(int argc, char *argv[])
     status = bladerf_configs_config_sync_tx(params.p_bladerf_device);
 
     status = bladerf_configs_dc_calibration(params.p_bladerf_device);
-
-
+    
     ofdm_flexframe_init();
 
     pthread_create(&receive_thread_id, NULL, receive_thread, (void *)(&params) );
     pthread_create(&transmit_thread_id, NULL, transmit_thread, (void *)(&params));
    
 	
-    while(1000000000);
+    while(1);
 
     return 0;
 }
@@ -154,19 +151,22 @@ static int mycallback(unsigned char *  _header,
 
 	S_Main_Params* p_params = (S_Main_Params*)_userdata;
 
-	if ( _header_valid  )
+	if ( _payload_valid  )
 	{
 
 		static int counter = 0;
 
-		printf("[%u]: (%s):  \tRSSI=(%5.5f)\n", counter, _payload, _stats.rssi);
+		//printf("[%u]: (%s):  \tRSSI=(%5.5f)\n", counter, _payload, _stats.rssi);
 
 		int len = tuntap_write(p_params->tun_file_descriptor, (char*)_payload, _payload_len);
-		if(len != _payload_len){
-			perror("cannot write to tun_file");
-		}
+
 		counter++;
 	}
+    else{
+        static int invalid_header_cnt = 0;
+        invalid_header_cnt++;
+        printf("\ninvalid header number: %d\n", invalid_header_cnt++);
+    }
 
 
 return 0;
@@ -183,9 +183,9 @@ int fork_child_process(char* path_to_exe)
 
        if(child_pid == 0){
 
-           status = execv(path_to_exe, arg);
-           printf("Error execv");
-           exit(0);
+        status = execv(path_to_exe, arg);
+        printf("Error execv");
+        exit(0);
        }
        else{
            do{int
